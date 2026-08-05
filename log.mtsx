@@ -1,0 +1,38 @@
+// require MT >= 2.16.0
+{
+    name: ["Log (Dracula)", ".log", ".trace"]
+    hide: false
+    ignoreCase: true
+    styles: [
+        "default", #1e1b19, #f8f8f2
+        "err", #f44336, #ff5555, @B
+        "warn", #ffab00, #f1fa8c, @B
+        "info", #4CAF50, #50fa7b, @B
+        "debug", #0288d1, #8be9fd
+        "verbose", #ba68c8, #bd93f9
+        "time", #9e9e9e, #6272a4
+        "url", #1976d2, #8be9fd, @U
+        "exception", #f44336, #ff5555, @B
+        "stack", #9e9e9e, #6272a4, @I
+    ]
+    contains: [
+        // 1. 异常堆栈 (at xxx.xxx(File.java:123))
+        {match: /(?m)^\s*at\s+.*$/, 0: "stack"}
+        // 2. 异常类名
+        {match: /\b\w*(?:Exception|Error|Failure)\b/, 0: "exception"}
+        // 3. 日志级别
+        {match: /\b(?:ERROR|FATAL|SEVERE|CRITICAL)\b/, 0: "err"}
+        {match: /\b(?:WARN|WARNING)\b/, 0: "warn"}
+        {match: /\b(?:INFO|INFORMATION|NOTICE)\b/, 0: "info"}
+        {match: /\b(?:DEBUG)\b/, 0: "debug"}
+        {match: /\b(?:VERBOSE|TRACE)\b/, 0: "verbose"}
+        // 4. 时间戳
+        {match: /\b\d{4}[-\/]\d{2}[-\/]\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?(?:Z|[+-]\d{2}:?\d{2})?\b/, 0: "time"}
+        {match: /\b\d{2}:\d{2}:\d{2}(?:[.,]\d+)?\b/, 0: "time"}
+        // 5. URL 与 IP
+        {match: /https?:\/\/[^\s]+/, 0: "url"}
+        {match: /\b\d{1,3}(?:\.\d{1,3}){3}\b/, 0: "url"}
+        // 6. 数字
+        {builtin: #PROGRAM_NUMBER#}
+    ]
+}
