@@ -1,0 +1,32 @@
+// require MT >= 2.16.0
+{
+    name: ["Text (Dracula)", ".txt", ".text", ".conf", ".ini", ".properties"]
+    hide: false
+    ignoreCase: false
+    styles: [
+        "default", #1e1b19, #f8f8f2
+        "string", #558b2f, #f1fa8c
+        "number", #558b2f, #bd93f9
+        "type", #1976d2, #8be9fd
+        "url", #1976d2, #8be9fd, @U
+        "todo", #ffab00, #f1fa8c, @B
+        "section", #d32f2f, #ff79c6, @B
+    ]
+    comment: {startsWith: "#"}
+    comment: {startsWith: ";"}
+    contains: [
+        // 1. INI/Conf 段落 [Section]
+        {match: /(?m)^\s*\[[^\]]+\]/, 0: "section"}
+        // 2. 键值对 (key=value) 的 key
+        {match: /(?m)^\s*[\w.-]+(?=\s*=)/, 0: "type"}
+        // 3. TODO/FIXME 标记
+        {match: /\b(?:TODO|FIXME|NOTE|HACK|XXX)\b/, 0: "todo"}
+        // 4. URL 和 邮箱
+        {match: /https?:\/\/[^\s]+/, 0: "url"}
+        {match: /\b[\w.-]+@[\w.-]+\.\w+\b/, 0: "url"}
+        // 5. 引号字符串
+        {builtin: #QUOTED_STRING#}
+        // 6. 数字
+        {builtin: #PROGRAM_NUMBER#}
+    ]
+}
