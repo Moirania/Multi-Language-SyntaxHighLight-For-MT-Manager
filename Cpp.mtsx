@@ -1,0 +1,60 @@
+// require MT >= 2.16.0
+{
+    name: ["C++ (Dracula)", ".cpp", ".cc", ".cxx", ".c", ".h", ".hpp", ".hxx"]
+    hide: false
+    ignoreCase: false
+    styles: [
+        // 日间 = dracula，夜间 = dracula-dark
+        "default", #1e1b19, #f8f8f2
+        "keyword", #d32f2f, #ff79c6, @B
+        "type", #1976d2, #8be9fd
+        "func", #2196f3, #8be9fd
+        "variable", #ba68c8, #bd93f9
+        "constant", #ff6f00, #bd93f9
+        "number", #558b2f, #bd93f9
+        "string", #558b2f, #f1fa8c
+        "strEscape", #2196f3, #8be9fd
+        "comment", #9e9e9e, #6272a4, @I
+        "meta", #827717, #50fa7b
+        "operator", #1976d2, #ff79c6
+    ]
+    comment: {startsWith: "//"}
+    comment: {startsWith: "/*", endsWith: "*/"}
+    bracketPairs: ["{}", "[]", "()"]
+    contains: [
+        // 1. 预处理指令（#include <...> 或 "..." 整体高亮）
+        {match: /(?m)^\s*#\s*include\s*[<"][^>"]+[>"]/, 0: "meta"}
+        {match: /(?m)^\s*#\s*\w+/, 0: "meta"}
+        // 2. 字符串与字符（内置 C 字符串匹配器，转义高亮、非法转义标红）
+        {builtin: #C_QUOTED_STRING#}
+        // 3. 数字（内置 C 数字匹配器：0x/0b/浮点/ULL 后缀等）
+        {builtin: #C_NUMBER#}
+        // 4. 宏常量（全大写，如 MAX_SIZE）
+        {match: /\b[A-Z][A-Z0-9_]*\b/, 0: "constant"}
+        // 5. 关键字
+        {match: keywordsToRegex(
+            "alignas alignof and and_eq asm auto bitand bitor break case catch"
+            "class compl concept const consteval constexpr constinit const_cast"
+            "continue co_await co_return co_yield decltype default delete do"
+            "dynamic_cast else enum explicit export extern false for friend goto"
+            "if inline mutable namespace new noexcept not not_eq nullptr operator"
+            "or or_eq private protected public register reinterpret_cast requires"
+            "return sizeof static static_assert static_cast struct switch template"
+            "this thread_local throw true try typedef typeid typename union using"
+            "virtual volatile while xor xor_eq override final"
+        ), 0: "keyword"}
+        // 6. 基本类型与常见标准库类型
+        {match: keywordsToRegex(
+            "void bool char short int long float double signed unsigned wchar_t"
+            "char8_t char16_t char32_t size_t ptrdiff_t intptr_t uintptr_t"
+            "int8_t int16_t int32_t int64_t uint8_t uint16_t uint32_t uint64_t"
+            "string vector map set list array pair tuple optional variant any"
+        ), 0: "type"}
+        // 7. 类名/自定义类型（大写开头）
+        {match: /\b[A-Z][a-zA-Z0-9_]*\b/, 0: "type"}
+        // 8. 函数调用/声明（后跟左括号）
+        {match: /\b[a-zA-Z_]\w*(?=\s*\()/, 0: "func"}
+        // 9. 运算符（注意：/ 已转义为 \/）
+        {match: /[+\-*\/%=<>!&|^~?:]+/, 0: "operator"}
+    ]
+}
