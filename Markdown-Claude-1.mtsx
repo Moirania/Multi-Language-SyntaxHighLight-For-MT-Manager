@@ -1,0 +1,628 @@
+// require MT >= 2.16.0
+//
+// Markdown Claude 2.0 —— Claude 配色的 Markdown 语法高亮
+//
+// 相比 1.0 的升级：
+//   · 标题带整行底色（H1/H2 像一条暖色横幅），表头同理
+//   · 关键词「徽章」：TODO / NOTE / WARNING 等带彩色背景，中英文都支持
+//   · GitHub 提示块 [!NOTE] [!TIP] [!IMPORTANT] [!WARNING] [!CAUTION] 各自配色
+//   · 引用块整行淡底色，已完成任务整行变灰，任务框带背景
+//   · ==高亮==、<mark>、<kbd>、版本号、@用户、#123、:emoji: 都有背景
+//   · 代码块：围栏行是深色标题条，内容整行底色；
+//     json / yaml / bash / js / ts / python / html / css / diff 按语言高亮
+//   · 表格：表头横幅、竖线着色、单元格里照常解析行内语法
+//
+// 配色：Clay #D97757 橘（结构）/ Sky #4A7FB0 蓝（链接、属性）/
+//       Olive #5F7347 绿（字符串、地址）/ Kraft #9A6B4F 褐（常量、辅助）/ 灰（标点、注释）
+//
+// 匹配规则：位置更靠前的优先；位置相同时，写在前面的优先
+{
+    name: ["Markdown Claude", ".md", ".markdown", ".mdown", ".mkd"]
+    hide: false
+    comment: {startsWith: "<!--", endsWith: "-->", insertSpace: true, addToContains: false}
+    bracketPairs: ["[]", "()", "{}"]
+
+    styles: [
+        // ================= 标题（整行底色） =================
+        "mdH1", #C15F3C$F8E9E0, #E58A68$33261F, @B
+        "mdH2", #D97757$FBF1EA, #D97757$2C221D, @B
+        "mdH3", #8A5A44, #D4A27F, @B
+        "mdHeadingMark", #B0AEA5, #6F6D66
+
+        // ================= 强调 =================
+        "mdBold", #2B2A27, #F5F3EC, @B
+        "mdItalic", @I
+        "mdBoldItalic", #2B2A27, #F5F3EC, @BI
+        "mdStrike", #B0AEA5, #6F6D66, @S
+        "mdMark", #5B4300#F7E3A1, #F2D98B#4F4220            // ==高亮== 与 <mark>
+        "mdKbd", #3D3D3A#E6E2D6, #D6D3C8#33312E, @B         // <kbd>按键</kbd>
+        "mdKbdMark", #B0AEA5, #6F6D66
+
+        // ================= 关键词徽章（带背景） =================
+        "mdKwTodo", #B4472C#F8E1D6, #E8A27F#4A2F25, @B       // TODO FIXME 待办
+        "mdKwInfo", #2F6A9E#DDE9F4, #8DB6DB#243545, @B       // NOTE INFO TIP 注意 提示
+        "mdKwDone", #4A6B33#E1EBD6, #A9C98A#26331F, @B       // DONE FIXED 已完成
+        "mdKwWarn", #8A5A12#F6E7C4, #E6C070#4A3C1B, @B       // WARNING DEPRECATED 警告
+        "mdKwDanger", #A8372C#F6D9D4, #F0A398#4A2623, @B     // DANGER ERROR BREAKING 危险
+        "mdKwImportant", #6B4A2E#EBDDC6, #D8B58D#42352A, @B  // IMPORTANT 重要
+        "mdVersion", #4A6B33#EDF2E6, #A9C98A#2A3226          // v1.2.3
+        "mdMention", #2F6A9E#E6EEF6, #8DB6DB#27333F          // @user
+        "mdIssue", #6B4A2E#EFE6D8, #D8B58D#3A3228            // #123
+        "mdEmoji", #9A6B4F, #D4A27F                          // :smile:
+        "mdBreak", #EAE6DB#EAE6DB, #2E2C29#2E2C29            // 行尾两个空格（硬换行）
+
+        // ================= 行内代码 =================
+        "mdCode", #B4472C#EFEDE4, #E8A27F#2F2E2B
+
+        // ================= 围栏代码块 =================
+        "mdCodeBlock", #3D3D3A$F0EEE6, #D6D3C8$1F1E1D        // 代码内容：整行底色
+        "mdFence", #8C8A82$E6E2D6, #8F8D84$151413            // 围栏行：更深的标题条
+        "mdFenceInfo", #C15F3C#F6DDD0, #E58A68#3A2A24, @B    // 语言标签徽章
+
+        // 代码块内的 token，每个都显式带行底色，保证整块底色连贯
+        "cKw", #C15F3C$F0EEE6, #E58A68$1F1E1D
+        "cStr", #5F7347$F0EEE6, #9BB07F$1F1E1D
+        "cNum", #9A6B4F$F0EEE6, #D4A27F$1F1E1D
+        "cFn", #4A7FB0$F0EEE6, #6A9BCC$1F1E1D
+        "cConst", #B4472C$F0EEE6, #E8A27F$1F1E1D
+        "cColor", #9A6B4F, #D4A27F                           // 颜色值的基础风格：不写行底色，靠向下传播继承
+        "cCmt", #9A988F$F0EEE6, #77756D$1F1E1D, @I
+        "cKey", #4A7FB0$F0EEE6, #6A9BCC$1F1E1D
+        "cVar", #9A6B4F$F0EEE6, #D4A27F$1F1E1D
+        "cType", #A8643F$F0EEE6, #E0A67F$1F1E1D
+        "cTag", #C15F3C$F0EEE6, #E58A68$1F1E1D
+        "cAttr", #4A7FB0$F0EEE6, #6A9BCC$1F1E1D
+        "cPunct", #A09E96$F0EEE6, #7A786F$1F1E1D
+        "cAt", #D97757$F0EEE6, #D97757$1F1E1D, @B
+        "cSel", #9A6B4F$F0EEE6, #D4A27F$1F1E1D
+        // diff：整行红 / 绿底
+        "cAdd", #3F5A2B$E1EAD3, #A9C98A$22301F
+        "cDel", #8F2F25$F4DAD5, #E59A8F$3A2220
+        "cHunk", #4A7FB0$E4EDF5, #6A9BCC$24323F, @B
+        "cMeta", #8C8A82$E6E2D6, #8F8D84$151413, @B
+
+        // ================= 块级结构 =================
+        "mdQuoteMark", #D97757, #D97757, @B
+        "mdQuoteText", #5E5D59$F5F2EB, #B8B5AB$2A2927        // 引用文字：整行淡底色
+        "mdListMark", #D97757, #D97757, @B
+        "mdListMark2", #9A6B4F, #D4A27F, @B                  // 嵌套列表符号
+        "mdTaskDone", #4A6B33#E1EBD6, #A9C98A#26331F, @B     // [x]
+        "mdTaskTodo", #C15F3C#F8E1D6, #E58A68#4A2F25, @B     // [ ]
+        "mdDoneText", #9A988F, #77756D                       // 已完成任务的文字
+        "mdHr", #B0AEA5, #6F6D66, @B
+
+        // ================= 表格 =================
+        "mdTableHead", #5E3A2A$EFEBE0, #E8D2C4$2E2C29, @B
+        "mdTablePipeHead", #D97757$EFEBE0, #D97757$2E2C29, @B
+        "mdTableSep", #B0AEA5$EFEBE0, #6F6D66$2E2C29
+        "mdTablePipe", #D97757, #D97757
+
+        // ================= 链接与图片 =================
+        "mdLinkMark", #B0AEA5, #6F6D66
+        "mdLinkText", #4A7FB0, #6A9BCC
+        "mdLinkUrl", #5F7347, #9BB07F
+        "mdUrl" > "mdLinkUrl", @U
+        "mdImageAlt", #9A6B4F, #D4A27F
+        "mdRefLabel", #9A6B4F, #D4A27F
+        "mdFootnote", #9A6B4F, #D4A27F
+        "mdStr", #5F7347, #9BB07F
+
+        // ================= 转义、实体、HTML、注释 =================
+        "mdEscape", #D97757, #D97757
+        "mdEntity", #788C5D, #9BB07F
+        "mdTag", #C15F3C, #E58A68
+        "mdAttr", #4A7FB0, #6A9BCC
+        "mdPunct", #B0AEA5, #6F6D66
+        "mdComment", #B0AEA5, #6F6D66, @I
+    ]
+
+    defines: [
+        // ============================================================
+        //  关键词徽章：可在粗体、斜体、注释、引用里复用
+        // ============================================================
+        "kwChips": [
+            // 待办类（橘）
+            {match: /\[(?:TODO|FIXME|XXX|HACK|BUG|TBD|WIP)\]|\b(?:TODO|FIXME|XXX|HACK|BUG|TBD|WIP)\b|【(?:待办|待完成|待修复)】|(?:待办|待完成|待修复)(?=[:：])/, 0: "mdKwTodo"}
+            // 提示类（蓝）
+            {match: /\[(?:NOTE|INFO|TIP|HINT)\]|\b(?:NOTE|INFO|TIP|HINT)\b|【(?:注意|提示|说明|备注)】|(?:注意|提示|说明|备注|小贴士)(?=[:：])/, 0: "mdKwInfo"}
+            // 完成类（绿）
+            {match: /\[(?:DONE|FIXED|RESOLVED)\]|\b(?:DONE|PASSED|SUCCESS|FIXED|RESOLVED)\b|【(?:已完成|已修复)】/, 0: "mdKwDone"}
+            // 警告类（琥珀）
+            {match: /\[(?:WARNING|WARN|DEPRECATED)\]|\b(?:WARNING|WARN|DEPRECATED)\b|【(?:警告|警示|已弃用|废弃)】|(?:警告|警示)(?=[:：])/, 0: "mdKwWarn"}
+            // 重要类（褐）
+            {match: /\[IMPORTANT\]|\bIMPORTANT\b|【重要】|重要(?=[:：])/, 0: "mdKwImportant"}
+            // 危险类（红）
+            {match: /\[(?:DANGER|CAUTION|BREAKING|ERROR)\]|\b(?:DANGER|CAUTION|BREAKING|ERROR|FAILED)\b|【(?:危险|错误|禁止)】|(?:危险|错误|禁止)(?=[:：])/, 0: "mdKwDanger"}
+        ]
+
+        // 行内代码：三个、两个、一个反引号，长的在前
+        "inlineCode": [
+            {match: /```[^`\n]+```/, 0: "mdCode"}
+            {match: /``(?:[^`\n]|`(?!`))+``/, 0: "mdCode"}
+            {match: /`[^`\n]+`/, 0: "mdCode"}
+        ]
+
+        // 图片：![alt](url "title")
+        "image": {
+            match: /(!\[)([^\]\n]*)(\]\()(<[^>\n]*>|[^\s)]*)((?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'))?)(\))/
+            1: "mdLinkMark"
+            2: "mdImageAlt"
+            3: "mdLinkMark"
+            4: "mdLinkUrl"
+            5: "mdStr"
+            6: "mdLinkMark"
+        }
+
+        // 轻量行内规则：用在链接文字、表头里（不含链接，避免递归）
+        "inlineLite": [
+            {include: "inlineCode"}
+            {include: "image"}
+            {include: "kwChips"}
+        ]
+
+        // HTML 标签里的属性
+        "htmlAttr": {
+            match: /([\w:@.-]+)(?:(=)("[^"]*"|'[^']*'|[^\s"'<>]+))?/
+            1: "mdAttr"
+            2: "mdPunct"
+            3: "mdStr"
+        }
+
+        // ============================================================
+        //  全部行内规则：标题、引用、表格单元格、已完成任务里复用
+        // ============================================================
+        "inlineRules": [
+            // 反斜杠转义（在强调之前）
+            {match: /\\[!-\/:-@\[-`{-~]/, 0: "mdEscape"}
+            // 行内代码（在强调之前，避免代码里的 * _ 被解析）
+            {include: "inlineCode"}
+            // 图片、脚注引用、链接
+            {include: "image"}
+            {match: /\[\^[^\]\s]+\]/, 0: "mdFootnote"}
+            {
+                match: /(\[)((?:!\[[^\]\n]*\]\([^)\n]*\)|[^\[\]\n!]|!(?!\[))+)(\]\()(<[^>\n]*>|[^\s)]*)((?:[ \t]+(?:"[^"\n]*"|'[^'\n]*'))?)(\))/
+                1: "mdLinkMark"
+                2: "mdLinkText"
+                2: {include: "inlineLite"}
+                3: "mdLinkMark"
+                4: "mdLinkUrl"
+                5: "mdStr"
+                6: "mdLinkMark"
+            }
+            {
+                match: /(!?\[)([^\]\n]+)(\]\[)([^\]\n]*)(\])/
+                1: "mdLinkMark"
+                2: "mdLinkText"
+                3: "mdLinkMark"
+                4: "mdRefLabel"
+                5: "mdLinkMark"
+            }
+            // 自动链接
+            {match: /<[A-Za-z][A-Za-z0-9+.-]{1,31}:[^\s<>]*>/, 0: "mdUrl"}
+            {match: /<[\w.+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+>/, 0: "mdUrl"}
+            // <kbd> 与 <mark>：内容带背景
+            {
+                match: /(?i)(<kbd>)(.*?)(<\/kbd>)/
+                1: "mdKbdMark"
+                2: "mdKbd"
+                3: "mdKbdMark"
+            }
+            {
+                match: /(?i)(<mark>)(.*?)(<\/mark>)/
+                1: "mdKbdMark"
+                2: "mdMark"
+                3: "mdKbdMark"
+            }
+            // 其他 HTML 标签
+            {
+                match: /(<\/?)([A-Za-z][\w:-]*)((?:\s+[^<>]*?)?)(\/?>)/
+                1: "mdPunct"
+                2: "mdTag"
+                3: {include: "htmlAttr"}
+                4: "mdPunct"
+            }
+            // 裸 URL
+            {match: /\b(?:https?|ftp):\/\/[^\s<>()\[\]]*[^\s<>()\[\].,;:!?'"*_~]/, 0: "mdUrl"}
+            // HTML 实体
+            {match: /&(?:#[0-9]{1,7}|#[xX][0-9A-Fa-f]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});/, 0: "mdEntity"}
+            // ==高亮==
+            {match: /==(?=\S)[^=\n]+?(?<=\S)==/, 0: "mdMark"}
+            // 强调（粗斜体 > 粗体 > 斜体 > 删除线），里面可以出现关键词徽章
+            {
+                match: /(\*\*\*(?=\S)[^*\n]+?(?<=\S)\*\*\*)/
+                1: "mdBoldItalic"
+                1: {include: "kwChips"}
+            }
+            {
+                match: /(?<![\w\\])(___(?=\S)[^_\n]+?(?<=\S)___)(?!\w)/
+                1: "mdBoldItalic"
+                1: {include: "kwChips"}
+            }
+            {
+                match: /(\*\*(?=\S)(?:[^*\n]|\*(?!\*))+?(?<=\S)\*\*)/
+                1: "mdBold"
+                1: {include: "kwChips"}
+            }
+            {
+                match: /(?<![\w\\])(__(?=\S)(?:[^_\n]|_(?!_))+?(?<=\S)__)(?!\w)/
+                1: "mdBold"
+                1: {include: "kwChips"}
+            }
+            {
+                match: /(?<![*\\])(\*(?![\s*])[^*\n]+?(?<![\s\\])\*)(?!\*)/
+                1: "mdItalic"
+                1: {include: "kwChips"}
+            }
+            {
+                match: /(?<![\w\\])(_(?![\s_])[^_\n]+?(?<![\s\\])_)(?!\w)/
+                1: "mdItalic"
+                1: {include: "kwChips"}
+            }
+            {match: /~~(?=\S)[^~\n]+?(?<=\S)~~/, 0: "mdStrike"}
+            // 关键词徽章（普通文字里的 TODO / NOTE / 注意： 等）
+            {include: "kwChips"}
+            // 版本号：v1.2.3、2.16.0、1.0.0-beta.1
+            {match: /(?<![\w.])v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?(?!\w|\.\d)/, 0: "mdVersion"}
+            // @用户名、#123 议题编号
+            {match: /(?<![\w@.\/])@[A-Za-z0-9][A-Za-z0-9-]{0,38}(?![\w@])/, 0: "mdMention"}
+            {match: /(?<![\w&#\/])#\d{1,5}(?!\w)/, 0: "mdIssue"}
+            // :emoji: 短代码
+            {match: /(?<![\w:\/]):[a-z0-9_+-]{2,32}:(?![\w:])/, 0: "mdEmoji"}
+            // 行尾两个以上空格 = 硬换行，用淡底色标出来
+            {match: /(?m)(?<=\S)[ ]{2,}$/, 0: "mdBreak"}
+        ]
+
+        // ============================================================
+        //  围栏代码块：结束行共用，各语言的开始行和规则各自定义
+        //  语言匹配在前，没写语言或不认识的语言走后面的通用围栏
+        // ============================================================
+
+        // ---------- JSON ----------
+        "fenceJson": {
+            start: {match: /(?mi)^[ \t]{0,3}```(?!`)[ \t]*(json|jsonc|json5)\b[^`\n]*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+            contains: [
+                {match: /"(?:[^"\\\n`]|\\.)*"(?=[ \t]*:)/, 0: "cKey"}
+                {match: /"(?:[^"\\\n`]|\\.)*"/, 0: "cStr"}
+                {match: /\/\/[^\n]*/, 0: "cCmt"}
+                {match: /\/\*(?:(?!`{3})[\s\S])*?\*\//, 0: "cCmt"}
+                {match: /\b(?:true|false|null)\b/, 0: "cConst"}
+                {match: /-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b/, 0: "cNum"}
+                {match: /[{}\[\],:]/, 0: "cPunct"}
+            ]
+        }
+
+        // ---------- YAML ----------
+        "fenceYaml": {
+            start: {match: /(?mi)^[ \t]{0,3}```(?!`)[ \t]*(yaml|yml|toml|ini)\b[^`\n]*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+            contains: [
+                {match: /(?<!\S)#[^\n]*/, 0: "cCmt"}
+                {match: /"(?:[^"\\\n`]|\\.)*"|'[^'\n`]*'/, 0: "cStr"}
+                {
+                    match: /(?m)^([ \t]*(?:-[ \t]+)*)([\w.\/-]+|\[[\w.-]+\])(?=[ \t]*[:=])/
+                    1: "cPunct"
+                    2: "cKey"
+                }
+                {match: /\b(?:true|false|null|yes|no|on|off)\b/, 0: "cConst"}
+                {match: /(?<![\w.])-?\d+(?:\.\d+)?(?![\w.])/, 0: "cNum"}
+                {match: /[&*][A-Za-z_][\w-]*/, 0: "cVar"}
+                {match: /(?m)^---[ \t]*$|^\.\.\.[ \t]*$/, 0: "cPunct"}
+            ]
+        }
+
+        // ---------- Bash / Shell ----------
+        "fenceBash": {
+            start: {match: /(?mi)^[ \t]{0,3}```(?!`)[ \t]*(bash|sh|shell|zsh|console|terminal|cmd|powershell|ps1)\b[^`\n]*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+            contains: [
+                // 注释（$# 不算）
+                {match: /(?<![\w$\\])#[^\n]*/, 0: "cCmt"}
+                // 双引号字符串，里面的 $变量 单独着色
+                {
+                    match: /("(?:[^"\\\n`]|\\.)*")/
+                    1: "cStr"
+                    1: {match: /\$(?:\{[^}\n]*\}|[A-Za-z_]\w*|[@*#?$!0-9-])/, 0: "cVar"}
+                }
+                {match: /'[^'\n`]*'/, 0: "cStr"}
+                {match: /\$(?:\{[^}\n]*\}|[A-Za-z_]\w*|[@*#?$!0-9-])/, 0: "cVar"}
+                // 关键字
+                {match: /\b(?:if|then|else|elif|fi|for|while|until|do|done|case|esac|in|function|select|return|exit|break|continue|local|export|readonly|declare|source|alias|unset|set|shift|trap|eval|exec)\b/, 0: "cKw"}
+                // 行首命令（可带 $ 提示符）
+                {
+                    match: /(?m)^[ \t]*(\$[ \t]+)?(?!(?:if|then|else|elif|fi|for|while|until|do|done|case|esac|function)\b)([A-Za-z_.\/][\w.\/-]*)/
+                    1: "cPunct"
+                    2: "cFn"
+                }
+                // 管道、&&、; 后面的命令
+                {
+                    match: /(&&|\|\||\||;)([ \t]*)(?!(?:then|do|done|fi|else|elif|esac)\b)([A-Za-z_.\/][\w.\/-]*)?/
+                    1: "cPunct"
+                    3: "cFn"
+                }
+                // 选项：-f --force -rf
+                {match: /(?<![\w-])--?[A-Za-z][\w-]*/, 0: "cAttr"}
+                {match: /(?<![\w.])\d+(?:\.\d+)?(?![\w.])/, 0: "cNum"}
+                {match: /[<>]+|\\$/, 0: "cPunct"}
+            ]
+        }
+
+        // ---------- JavaScript / TypeScript ----------
+        "fenceJs": {
+            start: {match: /(?mi)^[ \t]{0,3}```(?!`)[ \t]*(javascript|js|jsx|mjs|cjs|typescript|ts|tsx|node)\b[^`\n]*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+            contains: [
+                {match: /\/\*(?:(?!`{3})[\s\S])*?\*\//, 0: "cCmt"}
+                {match: /\/\/[^\n]*/, 0: "cCmt"}
+                {match: /"(?:[^"\\\n`]|\\.)*"|'(?:[^'\\\n`]|\\.)*'/, 0: "cStr"}
+                {
+                    match: /(`(?!``)(?:[^`\\]|\\[\s\S])*`(?!``))/
+                    1: "cStr"
+                    1: {match: /\$\{[^}\n]*\}/, 0: "cVar"}
+                }
+                {match: /\b(?:abstract|as|async|await|break|case|catch|class|const|continue|debugger|declare|default|delete|do|else|enum|export|extends|finally|for|from|function|get|if|implements|import|in|instanceof|interface|is|keyof|let|namespace|new|of|private|protected|public|readonly|return|set|static|super|switch|throw|try|type|typeof|var|void|while|with|yield)\b/, 0: "cKw"}
+                {match: /\b(?:true|false|null|undefined|NaN|Infinity|this)\b/, 0: "cConst"}
+                {number: "2|8|10|16|F|E|_", iSuffixes: "n", style: "cNum"}
+                {match: /@[A-Za-z_$][\w$.]*/, 0: "cFn"}
+                {match: /\b[A-Za-z_$][\w$]*(?=\s*\()/, 0: "cFn"}
+                {match: /\b[A-Z][A-Za-z0-9_$]*\b/, 0: "cType"}
+            ]
+        }
+
+        // ---------- Python ----------
+        "fencePython": {
+            start: {match: /(?mi)^[ \t]{0,3}```(?!`)[ \t]*(python|py|python3)\b[^`\n]*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+            contains: [
+                {match: /#[^\n]*/, 0: "cCmt"}
+                // 三引号字符串（不允许跨过围栏结束行）
+                {match: /(?i)[rbuf]{0,2}(?:"""(?:(?!`{3})[\s\S])*?"""|'''(?:(?!`{3})[\s\S])*?''')/, 0: "cStr"}
+                {match: /(?i)[rbuf]{0,2}(?:"(?:[^"\\\n`]|\\.)*"|'(?:[^'\\\n`]|\\.)*')/, 0: "cStr"}
+                {match: /\b(?:and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|nonlocal|not|or|pass|raise|return|try|while|with|yield)\b/, 0: "cKw"}
+                {match: /\b(?:True|False|None|self|cls)\b/, 0: "cConst"}
+                {match: /(?m)^[ \t]*@[\w.]+/, 0: "cFn"}
+                {
+                    match: /\b(?:def|class)([ \t]+)([A-Za-z_]\w*)/
+                    2: "cFn"
+                }
+                {number: "2|8|10|16|F|E|_", iSuffixes: "j", style: "cNum"}
+                {match: /\b[A-Za-z_]\w*(?=\s*\()/, 0: "cFn"}
+            ]
+        }
+
+        // ---------- HTML / XML ----------
+        "fenceHtml": {
+            start: {match: /(?mi)^[ \t]{0,3}```(?!`)[ \t]*(html|xml|svg|vue|xhtml)\b[^`\n]*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+            contains: [
+                {match: /<!--(?:(?!`{3})[\s\S])*?-->/, 0: "cCmt"}
+                {match: /(?i)<!DOCTYPE[^>]*>|<\?[^>]*\?>/, 0: "cConst"}
+                {
+                    match: /(<\/)([A-Za-z][\w:.-]*)(\s*)(>)/
+                    1: "cPunct"
+                    2: "cTag"
+                    4: "cPunct"
+                }
+                {
+                    match: /(<)([A-Za-z][\w:.-]*)((?:"[^"`]*"|'[^'`]*'|(?!`{3})[^>"'])*?)(\/?>)/
+                    1: "cPunct"
+                    2: "cTag"
+                    3: {
+                        match: /([^\s"'<>\/=]+)(?:(\s*=\s*)("[^"]*"|'[^']*'|[^\s"'<>=`]+))?/
+                        1: "cAttr"
+                        2: "cPunct"
+                        3: "cStr"
+                    }
+                    4: "cPunct"
+                }
+                {match: /&(?:#[0-9]{1,7}|#[xX][0-9A-Fa-f]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});/, 0: "cConst"}
+            ]
+        }
+
+        // ---------- CSS ----------
+        "fenceCss": {
+            start: {match: /(?mi)^[ \t]{0,3}```(?!`)[ \t]*(css|scss|less|sass)\b[^`\n]*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+            contains: [
+                {match: /\/\*(?:(?!`{3})[\s\S])*?\*\//, 0: "cCmt"}
+                {match: /"(?:[^"\\\n`]|\\.)*"|'(?:[^'\\\n`]|\\.)*'/, 0: "cStr"}
+                {match: /@[A-Za-z-]+/, 0: "cAt"}
+                // 选择器：后面（遇到 ; { } 之前）能看到 {
+                {match: /\.[A-Za-z_-][\w-]*(?=[^;{}]*\{)/, 0: "cSel"}
+                {match: /#[A-Za-z_-][\w-]*(?=[^;{}]*\{)/, 0: "cSel"}
+                {match: /::?[A-Za-z-]+(?=[^;{}]*\{)/, 0: "cSel"}
+                {match: /(?<![\w#.:@-])[A-Za-z][\w-]*(?=[^;{}()]*\{)/, 0: "cTag"}
+                // 属性名
+                {match: /(?<![\w-])-{0,2}[A-Za-z][\w-]*(?=[ \t]*:(?![^;{}]*\{))/, 0: "cKey"}
+                {match: /(?i)!\s*important\b/, 0: "cKw"}
+                // 颜色值：背景显示成实际颜色
+                {match: /(#)([0-9A-Fa-f]{3,8})\b/, 0: "parseColor(auto,2,HEX,cColor)"}
+                {match: /(?<![\w#.-])[+-]?(?:\d+\.?\d*|\.\d+)(?:%|[A-Za-z]{1,4})?(?![\w.])/, 0: "cNum"}
+                {match: /[A-Za-z_-][\w-]*(?=\()/, 0: "cFn"}
+            ]
+        }
+
+        // ---------- diff / patch ----------
+        "fenceDiff": {
+            start: {match: /(?mi)^[ \t]{0,3}```(?!`)[ \t]*(diff|patch)\b[^`\n]*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+            contains: [
+                {match: /(?m)^(?:diff |index |\+\+\+ |--- ).*$/, 0: "cMeta"}
+                {match: /(?m)^@@.*$/, 0: "cHunk"}
+                {match: /(?m)^\+.*$/, 0: "cAdd"}
+                {match: /(?m)^-.*$/, 0: "cDel"}
+            ]
+        }
+    ]
+
+    contains: [
+        // ===== 围栏代码块（指定语言的在前）=====
+        {include: "fenceJson"}
+        {include: "fenceYaml"}
+        {include: "fenceBash"}
+        {include: "fenceJs"}
+        {include: "fencePython"}
+        {include: "fenceHtml"}
+        {include: "fenceCss"}
+        {include: "fenceDiff"}
+        // 4 个及以上反引号（可以包住 3 个反引号的示例）
+        {
+            start: {match: /(?m)^[ \t]{0,3}(`{4,})[ \t]*([^\s`]*)[^`\n]*$/, 0: "mdFence", 2: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{4,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+        }
+        // 通用 3 反引号：没写语言或不认识的语言
+        {
+            start: {match: /(?m)^[ \t]{0,3}```(?!`)[ \t]*([^\s`]*)[^`\n]*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}`{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+        }
+        // 波浪线围栏
+        {
+            start: {match: /(?m)^[ \t]{0,3}~{3,}[ \t]*([^\s]*).*$/, 0: "mdFence", 1: "mdFenceInfo"}
+            end: {match: /(?m)^[ \t]{0,3}~{3,}[ \t]*$/, 0: "mdFence"}
+            style: "mdCodeBlock"
+        }
+
+        // ===== HTML 注释（里面的 TODO 等关键词也带徽章）=====
+        {
+            start: {match: /<!--/}
+            end: {match: /-->/}
+            style: "mdComment"
+            contains: [
+                {include: "kwChips"}
+            ]
+        }
+
+        // ===== 分隔线（必须在列表之前）=====
+        {match: /(?m)^[ \t]{0,3}(?:(?:\*[ \t]*){3,}|(?:-[ \t]*){3,}|(?:_[ \t]*){3,})$/, 0: "mdHr"}
+
+        // ===== ATX 标题：# 和 ## 带整行底色 =====
+        {
+            match: /(?m)^[ \t]{0,3}(#)(?!#)[ \t]+(.*)$/
+            1: "mdHeadingMark"
+            2: "mdH1"
+            2: {include: "inlineRules"}
+        }
+        {
+            match: /(?m)^[ \t]{0,3}(##)(?!#)[ \t]+(.*)$/
+            1: "mdHeadingMark"
+            2: "mdH2"
+            2: {include: "inlineRules"}
+        }
+        {
+            match: /(?m)^[ \t]{0,3}(#{3,6})(?!#)[ \t]+(.*)$/
+            1: "mdHeadingMark"
+            2: "mdH3"
+            2: {include: "inlineRules"}
+        }
+
+        // ===== Setext 标题（文字下一行是 === 或 ---）=====
+        {
+            match: /(?m)^(?![ \t]*(?:[-*+][ \t]|>|#|\||```|~~~|\d+[.)][ \t]|<|\[[^\]\n]*\]:))(?=[ \t]*\S)([^\n]+)\n([ \t]{0,3}=+[ \t]*)$/
+            1: "mdH1"
+            2: "mdHeadingMark"
+        }
+        {
+            match: /(?m)^(?![ \t]*(?:[-*+][ \t]|>|#|\||```|~~~|\d+[.)][ \t]|<|\[[^\]\n]*\]:))(?=[ \t]*\S)([^\n]+)\n([ \t]{0,3}-+[ \t]*)$/
+            1: "mdH2"
+            2: "mdHeadingMark"
+        }
+
+        // ===== GitHub 提示块：五种类型各自配色 =====
+        {
+            match: /(?mi)^[ \t]{0,3}(>)[ \t]*(\[!NOTE\])(.*)$/
+            1: "mdQuoteMark"
+            2: "mdKwInfo"
+            3: "mdQuoteText"
+        }
+        {
+            match: /(?mi)^[ \t]{0,3}(>)[ \t]*(\[!TIP\])(.*)$/
+            1: "mdQuoteMark"
+            2: "mdKwDone"
+            3: "mdQuoteText"
+        }
+        {
+            match: /(?mi)^[ \t]{0,3}(>)[ \t]*(\[!IMPORTANT\])(.*)$/
+            1: "mdQuoteMark"
+            2: "mdKwImportant"
+            3: "mdQuoteText"
+        }
+        {
+            match: /(?mi)^[ \t]{0,3}(>)[ \t]*(\[!WARNING\])(.*)$/
+            1: "mdQuoteMark"
+            2: "mdKwWarn"
+            3: "mdQuoteText"
+        }
+        {
+            match: /(?mi)^[ \t]{0,3}(>)[ \t]*(\[!CAUTION\])(.*)$/
+            1: "mdQuoteMark"
+            2: "mdKwDanger"
+            3: "mdQuoteText"
+        }
+
+        // ===== 普通引用：整行淡底色，文字里照常解析行内语法 =====
+        {
+            match: /(?m)^[ \t]{0,3}((?:>[ \t]?)+)(.*)$/
+            1: "mdQuoteMark"
+            2: "mdQuoteText"
+            2: {include: "inlineRules"}
+        }
+
+        // ===== 任务列表 =====
+        // 已完成：整行变灰
+        {
+            match: /(?m)^[ \t]*([-*+]|\d{1,9}[.)])[ \t]+(\[[xX]\])[ \t](.*)$/
+            1: "mdListMark"
+            2: "mdTaskDone"
+            3: "mdDoneText"
+            3: {include: "inlineRules"}
+        }
+        // 未完成：任务框带背景
+        {
+            match: /(?m)^[ \t]*([-*+]|\d{1,9}[.)])[ \t]+(\[ \])(?=[ \t])/
+            1: "mdListMark"
+            2: "mdTaskTodo"
+        }
+
+        // ===== 列表：顶层和嵌套用不同颜色 =====
+        {match: /(?m)^[ \t]+([-*+]|\d{1,9}[.)])[ \t]+/, 1: "mdListMark2"}
+        {match: /(?m)^([-*+]|\d{1,9}[.)])[ \t]+/, 1: "mdListMark"}
+
+        // ===== 表格：表头横幅 > 分隔行 > 数据行 =====
+        {
+            match: /(?m)^([^\n]*\|[^\n]*)(?=\n[ \t]*\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)+\|?[ \t]*$)/
+            1: "mdTableHead"
+            1: {match: /\|/, 0: "mdTablePipeHead"}
+            1: {include: "inlineLite"}
+        }
+        {match: /(?m)^[ \t]*\|?[ \t]*:?-+:?[ \t]*(?:\|[ \t]*:?-+:?[ \t]*)+\|?[ \t]*$/, 0: "mdTableSep"}
+        {
+            match: /(?m)^[ \t]*(\|.*)$/
+            1: {match: /\|/, 0: "mdTablePipe"}
+            1: {include: "inlineRules"}
+        }
+
+        // ===== 脚注定义、引用定义（脚注在前）=====
+        {match: /(?m)^[ \t]{0,3}(\[\^[^\]\s]+\]:)/, 1: "mdFootnote"}
+        {
+            match: /(?m)^[ \t]{0,3}(\[)([^\]\n^][^\]\n]*)(\]:)[ \t]*(<[^>\n]*>|\S+)(?:[ \t]+("[^"\n]*"|'[^'\n]*'|\([^)\n]*\)))?[ \t]*$/
+            1: "mdLinkMark"
+            2: "mdRefLabel"
+            3: "mdLinkMark"
+            4: "mdLinkUrl"
+            5: "mdStr"
+        }
+
+        // ===== 其余行内语法 =====
+        {include: "inlineRules"}
+    ]
+}
